@@ -1,0 +1,40 @@
+version: "3.2"
+
+volumes:
+  pg_data:
+  cms_logs:
+
+networks:
+  net:
+
+secrets:
+  pg_password:
+    file: ${PWD}/config/pg_password.txt
+
+services:
+  db:   
+    image: postgres
+    environment:
+      POSTGRES_USER: cmsuser
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_password
+      POSTGRES_DB: cmsdb
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks: 
+      - net
+    secrets:
+      - pg_password
+  cms:
+    image: ioi_box_cms
+    volumes:
+       - cms_logs:/var/local/log/cms
+       - /sys/fs/cgroup:/sys/fs/cgroup:rw
+       - ${PWD}/config/cms.conf:/usr/local/etc/cms.conf
+    privileged: true
+    depends_on:      
+      - "db"
+    ports:
+      - "18888:8888"
+      - "18889:8889"
+    networks: 
+      - net
